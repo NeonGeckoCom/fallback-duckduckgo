@@ -1,3 +1,31 @@
+# NEON AI (TM) SOFTWARE, Software Development Kit & Application Development System
+# All trademark and other rights reserved by their respective owners
+# Copyright 2008-2022 Neongecko.com Inc.
+# Authors: Daniel McKnight, Guy Daniels, Elon Gasper, Richard Leeds,
+# Regina Bloomstine, Casimiro Ferreira, Andrii Pernatii, Kirill Hrymailo
+# BSD-3
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from this
+#    software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+# CONTRIBUTORS  BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS;  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 # Copyright 2017 Mycroft AI, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,15 +39,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from collections import namedtuple
-import re
-from xml.etree import ElementTree
 
+import re
 import ddg3 as ddg
 import requests
 
+from collections import namedtuple
+from typing import Optional
+from xml.etree import ElementTree
+from neon_utils.message_utils import get_message_user
+from neon_utils.skills.common_query_skill import CommonQuerySkill, CQSMatchLevel
+from mycroft_bus_client import Message
+
 from mycroft import AdaptIntent, intent_handler
-from mycroft.skills.common_query_skill import CommonQuerySkill, CQSMatchLevel
 from mycroft.skills.skill_data import read_vocab_file
 
 
@@ -124,7 +156,7 @@ class DuckduckgoSkill(CommonQuerySkill):
             ans += '.'
         return ans
 
-    def query_ddg(self, query: str) -> Answer:
+    def query_ddg(self, query: str) -> Optional[Answer]:
         """Query DuckDuckGo about the search term.
 
         Args:
@@ -205,12 +237,12 @@ class DuckduckgoSkill(CommonQuerySkill):
                         return query[len(test):]
         return query
 
-    def CQS_match_query_phrase(self, query: str):
+    def CQS_match_query_phrase(self, query: str, message: Message):
         """Respond to Common Query framework with best possible answer.
 
         Args:
             query: question to answer
-
+            message: Message associated with request
         Returns:
             Tuple(
                 question being answered,
@@ -229,7 +261,9 @@ class DuckduckgoSkill(CommonQuerySkill):
                         break
         if answer and answer.text:
             self._cqs_match = answer
-            callback_data = {'answer': answer.text}
+            callback_data = {'answer': answer.text,
+                             'user': get_message_user(message),
+                             'query': query}
             return (query, CQSMatchLevel.CATEGORY, answer.text, callback_data)
         else:
             self.log.debug("DDG has no answer")
@@ -250,7 +284,6 @@ class DuckduckgoSkill(CommonQuerySkill):
             return
         
         self.display_answer(self._cqs_match)
-        
 
     @intent_handler(AdaptIntent("AskDucky").require("DuckDuckGo"))
     def handle_ask_ducky(self, message):

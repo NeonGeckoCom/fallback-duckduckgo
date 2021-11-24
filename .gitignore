@@ -1,3 +1,5 @@
+.idea/
+.msm
 # Compiled files
 *.pyc
 __pycache__/*
