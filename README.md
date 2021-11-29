@@ -12,7 +12,8 @@ Uses the [DuckDuckGo API](https://duckduckgo.com/api) to provide information.
 * "Who's Madonna?"
 
 ## Credits
-Mycroft AI (@MycroftAI)
+[Mycroft AI](https://github.com/MycroftAI)
+[NeonDaniel](https://github.com/NeonDaniel)
 
 ## Category
 **Information**
